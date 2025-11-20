@@ -1,4 +1,4 @@
-package tcp
+package p2p
 
 import (
 	"encoding/json"
@@ -8,16 +8,19 @@ import (
 )
 
 type Peer struct {
+	ID  string // identifier setelah melakukan handshake
+	mux sync.Mutex
+
 	conn    net.Conn
-	lock    sync.Mutex // lock to prevent concurrent writes to peer
 	encoder *json.Encoder
 	decoder *json.Decoder
 }
 
-// readLoop continuously reads messages from a peer
-func (p *Peer) readLoop(handler func(models.Message)) {
+// loop membaca pesan yang masuk pada koneksi oleh peer
+// dan mengirimnya ke sebuah callback
+func (p *Peer) readLoop(handler func(message Message)) {
 	for {
-		var msg models.Message
+		var msg Message
 		if err := p.decoder.Decode(&msg); err != nil {
 			fmt.Printf("peer read error: %v\n", err)
 			return
