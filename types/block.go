@@ -1,10 +1,11 @@
 // Berisi struktur block
-package core
+package types
 
 import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/bpjs-hackathon/sehat-chain/internal/consensus"
 	"github.com/bpjs-hackathon/sehat-chain/types"
@@ -25,7 +26,7 @@ type BlockHeader struct {
 	ProposerID string `json:"proposer"`
 }
 
-func (b *Block) Hash() string {
+func (b *Block) HeaderHash() string {
 	data := fmt.Sprintf("%d%d%s%s%s%s",
 		b.Header.Height,
 		b.Header.Timestamp,
@@ -37,4 +38,20 @@ func (b *Block) Hash() string {
 
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])
+}
+
+func CalculateTxRoot(txs []types.Transaction) string {
+	if len(txs) == 0 {
+		return strings.Repeat("0", 64)
+	}
+
+	h := sha256.New()
+	for _, tx := range txs {
+		txHash := tx.Hash()
+		txHashBytes, _ := hex.DecodeString(txHash)
+
+		h.Write(txHashBytes)
+	}
+
+	return hex.EncodeToString(h.Sum(nil))
 }
