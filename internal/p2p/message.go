@@ -1,12 +1,18 @@
 package p2p
 
+import (
+	"encoding/json"
+
+	"github.com/bpjs-hackathon/sehat-chain/types"
+)
+
 // Wrapping message untuk dikirim antar peer
 type Message struct {
-	SenderID   string `json:"sender_id"`
-	RequestID  string `json:"request_id"`  // UUID Pesan
-	ResponseID string `json:"response_id"` // RequestID diulang jika balasan
-	Type       string `json:"type"`
-	Payload    string `json:"payload"`
+	SenderID   string          `json:"sender_id"`
+	RequestID  string          `json:"request_id"`  // UUID Pesan
+	ResponseID string          `json:"response_id"` // RequestID diulang jika balasan
+	Type       string          `json:"type"`
+	Payload    json.RawMessage `json:"payload"`
 }
 
 // Konstanta type pesan p2p
@@ -16,12 +22,10 @@ const (
 	MsgHandshakeResp = "HANDSHAKE_RESPONSE"
 
 	// BLOCKCHAIN DATA
-	MsgTypeBlockReq       = "BLOCK_REQUEST"
-	MsgTypeBlockSend      = "BLOCK_SEND"
-	MsgTypePeerReq        = "PEER_REQUEST"
-	MsgTypePeerSend       = "PEER_SEND"
-	MsgTypeChainStateReq  = "CHAIN_STATE_REQUEST"
-	MsgTypeChainStateSend = "CHAIN_STATE_SEND"
+	MsgTypeBlockReq  = "BLOCK_REQUEST"
+	MsgTypeBlockSend = "BLOCK_SEND"
+	MsgTypePeerReq   = "PEER_REQUEST"
+	MsgTypePeerSend  = "PEER_SEND"
 
 	// CONSENSUS
 	MsgTypeTxGossip = "CONSENSUS_TX_GOSSIP" // Node menyebar tx dari frontend/node lain agar semua node menerima tx
@@ -29,3 +33,33 @@ const (
 	MsgTypePrepare  = "CONSENSUS_PREPARE"   // Node mengirim pesan prepare (proposal diterima)
 	MsgTypeCommit   = "CONSENSUS_COMMIT"    // Node mengirim pesan commit (siap untuk eksekusi block)
 )
+
+// Payloads
+// Handshake yang dilakukan antar nodes
+// (umumnya ln -> validator & validator -> validator)
+// Setelah menerima handshake diteruskan di node dimana ia akan mendeterminasi
+// Node ini termasuk ke list validator atau tidak
+type HandshakePayload struct {
+	NodeID string `json:"node_id"`
+	Port   string `json:"port"`
+	Secret string `json:"secret"`
+}
+
+type BlockPayload struct {
+	Block types.Block `json:"block"`
+}
+
+type PeerPayload struct {
+	PeerID string `json:"peer_id"`
+}
+
+type ConsensusPayload struct {
+	BlockHeight uint64 `json:"block_height"`
+	BlockHash   string `json:"block_hash"`
+	VoteType    string `json:"vote_type"` // "PREPARE" or "COMMIT"
+	Signature   string `json:"signature"`
+}
+
+type TxGossipPayload struct {
+	types.Transaction
+}

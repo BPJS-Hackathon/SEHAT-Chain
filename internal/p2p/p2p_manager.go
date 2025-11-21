@@ -16,24 +16,22 @@ type P2PManager struct {
 	Peers    map[string]*Peer // map peer berdasarkan id
 	peersMux sync.RWMutex
 
+	pendingMessages map[string]chan Message
+	pendingMux      sync.Mutex
+
 	// server listener
 	listener net.Listener
 
 	// Callback handler (meneruskan pesan ke layer atas)
 	messageHandler func(peer *Peer, msg Message)
-
-	// list channel untuk menerima response berdasarkan requestID
-	pendingResponses map[string]chan Message
-	pendingMux       sync.Mutex
 }
 
 // Membuat instance p2p manager
 func CreateP2PManager(nodeID string, port string) *P2PManager {
 	return &P2PManager{
-		ID:               nodeID,
-		Port:             port,
-		Peers:            make(map[string]*Peer),
-		pendingResponses: make(map[string]chan Message),
+		ID:    nodeID,
+		Port:  port,
+		Peers: make(map[string]*Peer),
 	}
 }
 
@@ -84,19 +82,29 @@ func (p2p *P2PManager) acceptLoop() {
 }
 
 func (p2p *P2PManager) handleIncomingMessage(peer *Peer, message Message) {
-	if message.ResponseID == message.RequestID {
-		p2p.pendingMux.Lock()
-		channel, exists := p2p.pendingResponses[message.RequestID]
-		p2p.pendingMux.Unlock()
-
-		if exists {
-			channel <- message
-			delete(p2p.pendingResponses, message.RequestID)
-			return
-		}
-	}
-
 	if p2p.messageHandler != nil {
 		p2p.messageHandler(peer, message)
 	}
+}
+
+func (p2p *P2PManager) RegisterPeer(peer *Peer, nodeID string) {
+	p2p.peersMux.Lock()
+	defer p2p.peersMux.Unlock()
+
+	peer.ID = nodeID
+	if oldPeer, exists := p2p.Peers[nodeID]; exists {
+		oldPeer.conn.Close()
+		fmt.Printf("peer %s reconnected and old connection is closed\n", nodeID)
+	}
+
+	p2p.Peers[nodeID] = peer
+	fmt.Printf("peer %s registered\n", nodeID)
+}
+
+func (p2p *P2PManager) RemovePeer(ID string) {
+	p2p.peersMux.Lock()
+	defer p2p.peersMux.Unlock()
+
+	delete(p2p.Peers, ID)
+	fmt.Printf("peer %s removed\n", ID)
 }

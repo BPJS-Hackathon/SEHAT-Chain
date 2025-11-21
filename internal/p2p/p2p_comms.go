@@ -1,9 +1,33 @@
 package p2p
 
 import (
+	"encoding/json"
 	"fmt"
+	"net"
 	"time"
 )
+
+// Koneksi awal ke peer (belum melakukan handshake) dan return peer untuk dilakukan handshake
+func (p2p *P2PManager) Connect(address string) (*Peer, error) {
+	var empty Peer
+
+	conn, err := net.Dial("tcp", address)
+	if err != nil {
+		return &empty, fmt.Errorf("failed to establish connection to %s, reason %v", address, err)
+	}
+
+	peer := &Peer{
+		conn:    conn,
+		encoder: json.NewEncoder(conn),
+		decoder: json.NewDecoder(conn),
+	}
+
+	go peer.readLoop(func(message Message) {
+		p2p.handleIncomingMessage(peer, message)
+	})
+
+	return peer, nil
+}
 
 // Pengiriman pesan one-way (tidak mengharapkan / menunggu response)
 func (p2p *P2PManager) Send(peerID string, message Message) error {
@@ -31,13 +55,13 @@ func (p2p *P2PManager) Request(peerID string, message Message, timeout time.Dura
 
 	// Registrasi channel ke pending responses
 	p2p.pendingMux.Lock()
-	p2p.pendingResponses[message.RequestID] = responseChannel
+	p2p.pendingMessages[message.RequestID] = responseChannel
 	p2p.pendingMux.Unlock()
 
 	// Defer cleanup channel
 	defer func() {
 		p2p.pendingMux.Lock()
-		delete(p2p.pendingResponses, message.RequestID)
+		delete(p2p.pendingMessages, message.RequestID)
 		close(responseChannel)
 		p2p.pendingMux.Unlock()
 	}()
@@ -57,7 +81,7 @@ func (p2p *P2PManager) Request(peerID string, message Message, timeout time.Dura
 }
 
 // Pengiriman pesan one-way ke semua peer terhubung
-func (p2p *P2PManager) Broadcast(message Message) {
+func (p2p *P2PManager) Broadcast(message Message, peerList []string) {
 	// ambil list peers
 	p2p.peersMux.RLock()
 	peers := p2p.Peers
