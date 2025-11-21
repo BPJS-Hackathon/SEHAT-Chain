@@ -22,7 +22,7 @@ type Transaction struct {
 	Type      string          `json:"type"`
 	Timestamp int64           `json:"timestamp"`
 	SenderID  string          `json:"sender_id"`
-	Signature string          `json:"secret"` // Mock signature
+	Signature string          `json:"signature"` // Mock signature
 	Payload   json.RawMessage `json:"payload"`
 }
 
