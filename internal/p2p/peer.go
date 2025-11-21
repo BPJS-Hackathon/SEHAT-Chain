@@ -8,7 +8,9 @@ import (
 )
 
 type Peer struct {
-	ID  string // identifier setelah melakukan handshake
+	ID      string // identifier setelah melakukan handshake
+	Address string
+
 	mux sync.Mutex
 
 	conn    net.Conn

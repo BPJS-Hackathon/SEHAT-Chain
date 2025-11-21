@@ -18,6 +18,7 @@ func (p2p *P2PManager) Connect(address string) (*Peer, error) {
 
 	peer := &Peer{
 		conn:    conn,
+		Address: address,
 		encoder: json.NewEncoder(conn),
 		decoder: json.NewDecoder(conn),
 	}
@@ -81,14 +82,20 @@ func (p2p *P2PManager) Request(peerID string, message Message, timeout time.Dura
 }
 
 // Pengiriman pesan one-way ke semua peer terhubung
-func (p2p *P2PManager) Broadcast(message Message, peerList []string) {
+func (p2p *P2PManager) Broadcast(message Message, sendToIDs []string) {
 	// ambil list peers
 	p2p.peersMux.RLock()
 	peers := p2p.Peers
 	p2p.peersMux.RUnlock()
 
-	// kirim pesan ke semua peer
-	for _, peer := range peers {
+	// kirim pesan ke peer ter-list
+	for index := range sendToIDs {
+		peer, exists := peers[sendToIDs[index]]
+		if !exists {
+			fmt.Printf("broadcast warning: skipped sending to id %s because it's not on list of active connection", sendToIDs[index])
+			continue
+		}
+
 		// goroutine untuk mengirim pesan. tidak menggunakan Send karena
 		// ada beberapa checking yang tidak perlu dilakukan disini (performance)
 		go func(peer *Peer) {

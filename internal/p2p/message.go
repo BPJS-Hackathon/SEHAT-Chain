@@ -24,8 +24,8 @@ const (
 	// BLOCKCHAIN DATA
 	MsgTypeBlockReq  = "BLOCK_REQUEST"
 	MsgTypeBlockSend = "BLOCK_SEND"
-	MsgTypePeerReq   = "PEER_REQUEST"
-	MsgTypePeerSend  = "PEER_SEND"
+	MsgTypePeersReq  = "PEERS_REQUEST"
+	MsgTypePeersSend = "PEERS_SEND"
 
 	// CONSENSUS
 	MsgTypeTxGossip = "CONSENSUS_TX_GOSSIP" // Node menyebar tx dari frontend/node lain agar semua node menerima tx
@@ -45,19 +45,28 @@ type HandshakePayload struct {
 	Secret string `json:"secret"`
 }
 
+type BlockRequestPayload struct {
+	Height uint64 `json:"height"`
+}
+
 type BlockPayload struct {
-	Block types.Block `json:"block"`
+	LatestHeight uint64      `json:"latest_height"`
+	Block        types.Block `json:"block"`
 }
 
 type PeerPayload struct {
-	PeerID string `json:"peer_id"`
+	Peers map[string]string `json:"peers"` // map id dan address
 }
 
-type ConsensusPayload struct {
+type BlockProposal struct {
+	Block types.Block `json:"block"`
+}
+
+type VotePayload struct {
 	BlockHeight uint64 `json:"block_height"`
 	BlockHash   string `json:"block_hash"`
 	VoteType    string `json:"vote_type"` // "PREPARE" or "COMMIT"
-	Signature   string `json:"signature"`
+	Signature   string `json:"signature"` // **INI SIGNATURE DARI BLOCK BUKAN DARI PESAN
 }
 
 type TxGossipPayload struct {
