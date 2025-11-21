@@ -88,7 +88,7 @@ func (mp *MemPool) rebuildSlice(queue []string) []string {
 }
 
 // Hitung tx yang tersimpan di mempool
-func (mp *MemPool) Count() int {
+func (mp *MemPool) Size() int {
 	mp.mux.RLock()
 	defer mp.mux.RUnlock()
 
