@@ -82,6 +82,18 @@ func (p2p *P2PManager) acceptLoop() {
 }
 
 func (p2p *P2PManager) handleIncomingMessage(peer *Peer, message Message) {
+	if message.ResponseID == message.RequestID {
+		p2p.pendingMux.Lock()
+		channel, exists := p2p.pendingMessages[message.RequestID]
+		p2p.pendingMux.Unlock()
+
+		if exists {
+			channel <- message
+			delete(p2p.pendingMessages, message.RequestID)
+			return
+		}
+	}
+
 	if p2p.messageHandler != nil {
 		p2p.messageHandler(peer, message)
 	}
