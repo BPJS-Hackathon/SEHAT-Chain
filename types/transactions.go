@@ -16,6 +16,7 @@ const (
 	TxTypeExecuteClaim = "EXECUTE_CLAIM" // Persetujuan final bahwa BPJS telah memvalidasi dan akan membayar
 )
 
+// Wrapping transaction yang disebar antar node
 type Transaction struct {
 	ID        string          `json:"id"`
 	Type      string          `json:"type"`

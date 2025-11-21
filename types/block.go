@@ -6,15 +6,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
-
-	"github.com/bpjs-hackathon/sehat-chain/internal/consensus"
-	"github.com/bpjs-hackathon/sehat-chain/types"
 )
 
 type Block struct {
-	Header       BlockHeader                 `json:"header"`
-	Transactions []types.Transaction         `json:"transactions"`
-	QC           consensus.QuorumCertificate `json:"qc"`
+	Header       BlockHeader       `json:"header"`
+	Transactions []Transaction     `json:"transactions"`
+	QC           QuorumCertificate `json:"qc"`
 }
 
 type BlockHeader struct {
@@ -40,7 +37,7 @@ func (b *Block) HeaderHash() string {
 	return hex.EncodeToString(hash[:])
 }
 
-func CalculateTxRoot(txs []types.Transaction) string {
+func CalculateTxRoot(txs []Transaction) string {
 	if len(txs) == 0 {
 		return strings.Repeat("0", 64)
 	}
