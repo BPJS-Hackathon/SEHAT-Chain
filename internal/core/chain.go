@@ -66,6 +66,13 @@ func (bc *Blockchain) AddBlock(block types.Block) error {
 		return fmt.Errorf("previous block hash did not match")
 	}
 
+	txSeen := make(map[string]bool)
+	for _, existingBlock := range bc.Blocks {
+		for _, tx := range existingBlock.Transactions {
+			txSeen[tx.ID] = true
+		}
+	}
+
 	bc.Blocks = append(bc.Blocks, block)
 	return nil
 }

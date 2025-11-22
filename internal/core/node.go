@@ -43,8 +43,10 @@ type Node struct {
 	Consensus  *consensus.RoundRobin
 
 	// Pool
-	txPool []types.Transaction
-	txMap  map[string]types.Transaction
+	txPool  []types.Transaction
+	txMap   map[string]types.Transaction
+	seenTxs map[string]any // key tx id
+	txMux   sync.RWMutex
 
 	// API
 	Server *api.Server
@@ -79,6 +81,7 @@ func CreateNode(ID string, secret string, port string, APIPort string, validator
 		P2P:         p2pMan,
 		txPool:      make([]types.Transaction, 0),
 		txMap:       make(map[string]types.Transaction),
+		seenTxs:     make(map[string]any, 0),
 	}
 
 	node.Consensus = consensus.NewRoundRobin(ID, &node, validatorsMap)
@@ -451,13 +454,11 @@ func (node *Node) GetLatestBlock() types.Block {
 }
 
 func (node *Node) CommitBlock(block types.Block) {
-	node.mux.Lock()
 	node.Blockchain.AddBlock(block)
 
 	node.Executor.ApplyBlock(block)
 
-	node.RemoveTxsFromPool(len(block.Transactions))
-	node.mux.Unlock()
+	node.RemoveTxsByID(block.Transactions)
 
 	blockPayload := p2p.BlockPayload{
 		LatestHeight: node.Blockchain.GetLatestHeight(),
@@ -483,8 +484,11 @@ func (node *Node) SignData(data []byte) string {
 }
 
 func (node *Node) CreateBlock() types.Block {
+	node.txMux.RLock()
 	txCount := min(len(node.txPool), MaxBlockTxs)
-	txs := node.txPool[:txCount]
+	txs := make([]types.Transaction, txCount)
+	copy(txs, node.txPool[:txCount]) // Make a copy
+	node.txMux.RUnlock()
 
 	prevBlock := node.Blockchain.GetLatestBlock()
 
@@ -541,26 +545,45 @@ func (node *Node) submitTransactionToNetwork(tx types.Transaction) {
 
 // Add tx to pool
 func (node *Node) AddTxToPool(tx types.Transaction) bool {
-	_, exists := node.txMap[tx.ID]
+	node.txMux.Lock()
+	defer node.txMux.Unlock()
+
+	_, exists := node.seenTxs[tx.ID]
 	if exists {
-		fmt.Print("skipping tx because it already exist on the pool\n")
+		fmt.Print("skipping tx because it already been seen\n")
 		return false
 	}
+
 	node.txPool = append(node.txPool, tx)
 	node.txMap[tx.ID] = tx
+	node.seenTxs[tx.ID] = nil
+
 	fmt.Print("added 1 tx to the pool\n")
 	return true
 }
 
-// Remove tx from pool
-func (node *Node) RemoveTxsFromPool(count int) bool {
-	if len(node.txPool) < count {
-		return false
+func (node *Node) RemoveTxsByID(txs []types.Transaction) {
+	node.txMux.Lock()
+	defer node.txMux.Unlock()
+
+	// Build a set of IDs to remove
+	toRemove := make(map[string]bool)
+	for _, tx := range txs {
+		toRemove[tx.ID] = true
 	}
 
-	for i := 0; i < count; i++ {
-		delete(node.txMap, node.txPool[i].ID)
+	// Filter the pool
+	newPool := make([]types.Transaction, 0, len(node.txPool))
+	for _, tx := range node.txPool {
+		if !toRemove[tx.ID] {
+			newPool = append(newPool, tx)
+		} else {
+			delete(node.txMap, tx.ID)
+			node.seenTxs[tx.ID] = nil
+			fmt.Printf("🗑️  removed tx %s from pool\n", tx.ID)
+		}
 	}
-	node.txPool = node.txPool[count:]
-	return true
+
+	node.txPool = newPool
+	fmt.Printf("📊 Pool size after removal: %d\n", len(node.txPool))
 }
