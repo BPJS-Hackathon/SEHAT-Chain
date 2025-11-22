@@ -2,6 +2,7 @@
 package mempool
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/bpjs-hackathon/sehat-chain/types"
@@ -21,17 +22,18 @@ func NewPool() *MemPool {
 }
 
 // Add tx ke mempool
-func (mp *MemPool) AddTransaction(tx types.Transaction) {
+func (mp *MemPool) AddTransaction(tx types.Transaction) error {
 	mp.mux.Lock()
 	defer mp.mux.Unlock()
 
 	// Transaction sudah ada
 	if _, exists := mp.transactions[tx.ID]; exists {
-		return
+		return fmt.Errorf("transaction already exists!")
 	}
 
 	mp.transactions[tx.ID] = tx
 	mp.order = append(mp.order, tx.ID)
+	return nil
 }
 
 // Ambil n total dari tx yang tersimpan di mempool

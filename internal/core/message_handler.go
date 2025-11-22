@@ -11,6 +11,8 @@ func (node *Node) handleIncomingMessage(peer *p2p.Peer, msg p2p.Message) {
 	switch msg.Type {
 	case p2p.MsgHandshakeReq:
 		node.handleHandshakeRequest(peer, msg)
+	case p2p.MsgHandshakeResp:
+		node.handleHandshakeResponse(peer, msg)
 	case p2p.MsgTypeBlockReq:
 		node.handleBlockRequest(peer, msg)
 	case p2p.MsgTypePeersReq:
@@ -60,6 +62,24 @@ func (node *Node) handleHandshakeRequest(peer *p2p.Peer, message p2p.Message) {
 	node.P2P.Send(handshake.NodeID, respMessage)
 }
 
+func (node *Node) handleHandshakeResponse(peer *p2p.Peer, message p2p.Message) {
+	var respPayload p2p.HandshakePayload
+	if err := json.Unmarshal(message.Payload, &respPayload); err != nil {
+		fmt.Printf("failed to unmarshal handshake response: %v\n", err)
+		return
+	}
+
+	// Store peer secret
+	node.mux.Lock()
+	node.peers[respPayload.NodeID] = respPayload.Secret
+	node.mux.Unlock()
+
+	// Register peer
+	node.P2P.RegisterPeer(peer, respPayload.NodeID)
+
+	fmt.Printf("✅ Handshake complete with %s\n", respPayload.NodeID)
+}
+
 func (node *Node) handlePeerRequest(peer *p2p.Peer, message p2p.Message) {
 	peersList := node.P2P.Peers
 
@@ -79,7 +99,7 @@ func (node *Node) handlePeerRequest(peer *p2p.Peer, message p2p.Message) {
 	respMessage := p2p.Message{
 		SenderID:   node.ID,
 		RequestID:  message.RequestID,
-		ResponseID: message.RequestID,
+		ResponseID: message.ResponseID,
 		Type:       p2p.MsgTypePeersSend,
 		Payload:    peerRespRaw,
 	}
@@ -129,7 +149,12 @@ func (node *Node) handleTxGossip(message p2p.Message) {
 	}
 
 	// Masukkan tx ke mempool
-	node.Mempool.AddTransaction(txGossip.Transaction)
+	err := node.Mempool.AddTransaction(txGossip.Transaction)
+	if err != nil {
+		// Return tanpa broadcast
+		fmt.Print("got tx that are already in mempool. Skipping broadcast")
+		return
+	}
 
 	// Broadcast lagi ke list validator
 	node.Broadcast(message)

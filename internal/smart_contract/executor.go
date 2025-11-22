@@ -33,7 +33,7 @@ func (e *Executor) applyTransaction(tx types.Transaction) {
 	switch tx.Type {
 	case types.TxTypeRecordVisit:
 		e.handleRecordVisit(tx)
-	case types.TxTypeCreateRujukan: // Pastikan menambahkan ini di types/transactions.go
+	case types.TxTypeCreateRujukan:
 		e.handleCreateRujukan(tx)
 	case types.TxTypeSubmitClaim:
 		e.handleSubmitClaim(tx)
@@ -164,7 +164,7 @@ func (e *Executor) updateClaimStatusSql(claimID string, status string) error {
 	jsonData, _ := json.Marshal(payload)
 
 	client := &http.Client{}
-	req, err := http.NewRequest("PUT", fmt.Sprintf("http://localhost:8080/blockchain/claims/%s/status", claimID), bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("http://localhost:8080/admin/claims/%s/status", claimID), bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("gagal hit database")
 	}

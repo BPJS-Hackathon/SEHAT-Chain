@@ -19,8 +19,9 @@ type WorldState struct {
 
 func CreateWorldState() *WorldState {
 	return &WorldState{
-		Rujukans: make(map[string]types.RujukanAsset),
-		Claims:   make(map[string]types.ClaimAsset),
+		VisitRecord: make(map[string]types.TxVisit),
+		Rujukans:    make(map[string]types.RujukanAsset),
+		Claims:      make(map[string]types.ClaimAsset),
 	}
 }
 

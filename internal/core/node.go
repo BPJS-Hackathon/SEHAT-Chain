@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bpjs-hackathon/sehat-chain/internal/api"
 	"github.com/bpjs-hackathon/sehat-chain/internal/consensus"
 	"github.com/bpjs-hackathon/sehat-chain/internal/mempool"
 	"github.com/bpjs-hackathon/sehat-chain/internal/p2p"
@@ -42,6 +43,9 @@ type Node struct {
 	Executor   *smartcontract.Executor
 	P2P        *p2p.P2PManager
 	Consensus  *consensus.RoundRobin
+
+	// API
+	Server *api.Server
 
 	mux sync.RWMutex
 }
@@ -79,6 +83,16 @@ func CreateNode(ID string, secret string, port string, validators []types.Valida
 	node.Consensus = consensus.NewRoundRobin(ID, &node, validatorsMap)
 	node.P2P.Subscribe(node.handleIncomingMessage)
 
+	handler := api.CreateAPIHandler()
+	handler.AddEndpoint("POST /api/rekam_medis/fk1", node.handleFK1RekamMedisPost)
+	handler.AddEndpoint("POST /api/rekam_medis/fk2", node.handleFK2RekamMedisPost)
+	handler.AddEndpoint("POST /api/claim", node.handleClaimExecute)
+	handler.AddEndpoint("GET /api/total_block", node.handleBlockTotalReq)
+	handler.AddEndpoint("GET /api/block/{height}", node.handleAPIBlockRequest)
+
+	server := api.CreateServer(handler, port)
+	node.Server = server
+
 	return &node
 }
 
@@ -87,7 +101,10 @@ func (node *Node) Start() {
 		panic(err)
 	}
 
-	node.ConnectToNetwork()
+	node.Server.Run()
+
+	//node.ConnectToNetwork()
+	node.EfficientConnectToNetwork()
 }
 
 func (node *Node) ConnectToNetwork() {
@@ -149,6 +166,36 @@ func (node *Node) ConnectToNetwork() {
 
 	// sinkronisasi network
 	node.triggerSync()
+}
+
+func (node *Node) EfficientConnectToNetwork() {
+	time.Sleep(time.Second * 2)
+
+	var wg sync.WaitGroup
+
+	for _, validator := range node.validators {
+		if validator.ID == node.ID {
+			continue
+		}
+
+		// Only connect if our ID is "less than" theirs (prevents both sides connecting)
+		if node.ID >= validator.ID {
+			continue // Let the other node initiate
+		}
+
+		wg.Add(1)
+		go func(address string) {
+			defer wg.Done()
+			for i := 0; i < 3; i++ {
+				if err := node.startHandshake(address); err == nil {
+					break
+				}
+				time.Sleep(1 * time.Second)
+			}
+		}(validator.Address)
+	}
+
+	wg.Wait() // Wait for all handshakes
 }
 
 func (node *Node) triggerSync() {
@@ -295,7 +342,7 @@ func (node *Node) startHandshake(address string) error {
 	// Kirim message dan tunggu balasan (blocking)
 	responseMessage, err := node.P2P.Request(address, message, time.Second*5)
 	if err != nil {
-		node.P2P.RemovePeer(address)
+		return err
 	}
 
 	// Parsing balasan
@@ -393,4 +440,24 @@ func calculateTxRoot(txs []types.Transaction) string {
 	}
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])
+}
+
+// Helper submit tx ke network
+func (node *Node) submitTransactionToNetwork(tx types.Transaction) {
+	node.Mempool.AddTransaction(tx)
+
+	payload := p2p.TxGossipPayload{
+		Transaction: tx,
+	}
+	payloadJson, _ := json.Marshal(payload)
+
+	msg := p2p.Message{
+		SenderID:  node.ID,
+		RequestID: uuid.NewString(),
+		Type:      p2p.MsgTypeTxGossip,
+		Payload:   payloadJson,
+	}
+
+	// 3. Broadcast to peers
+	node.Broadcast(msg)
 }
