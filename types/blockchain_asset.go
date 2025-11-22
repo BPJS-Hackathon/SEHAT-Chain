@@ -1,6 +1,11 @@
 // Berisi data yang tersimpan di blockchain
 package types
 
+const (
+	RujukanStatusActive = "ACTIVE"
+	RujukanStatusUsed   = "USED"
+)
+
 type RujukanAsset struct {
 	ID        string `json:"id"`
 	PesertaID string `json:"peserta_id"`

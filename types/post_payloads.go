@@ -37,7 +37,6 @@ type TxSubmitClaim struct {
 // So digunakan server BPJS untuk siap wiring uang ke faskes
 type TxExecuteClaim struct {
 	ClaimID string `json:"claim_id"`
-	AdminID string `json:"admin_id"`
 	Status  string `json:"status"`
 }
 
