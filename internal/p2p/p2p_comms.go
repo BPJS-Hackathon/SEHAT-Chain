@@ -28,9 +28,9 @@ func (p2p *P2PManager) Connect(address string) (*Peer, error) {
 	})
 
 	// Register temporarily with address as key
-	p2p.peersMux.Lock()
+	p2p.PeersMux.Lock()
 	p2p.Peers[address] = peer // ← Temporary registration
-	p2p.peersMux.Unlock()
+	p2p.PeersMux.Unlock()
 
 	return peer, nil
 }
@@ -39,9 +39,9 @@ func (p2p *P2PManager) Connect(address string) (*Peer, error) {
 func (p2p *P2PManager) Send(peerID string, message Message) error {
 	// Cek apakah peer yang ingin kita kirim pesan
 	// ada dalam list koneksi
-	p2p.peersMux.RLock()
+	p2p.PeersMux.RLock()
 	peer, exists := p2p.Peers[peerID]
-	p2p.peersMux.RUnlock()
+	p2p.PeersMux.RUnlock()
 
 	if !exists {
 		return fmt.Errorf("failed to send p2p message: peer (%s) not found", peerID)
@@ -89,9 +89,9 @@ func (p2p *P2PManager) Request(peerID string, message Message, timeout time.Dura
 // Pengiriman pesan one-way ke semua peer terhubung
 func (p2p *P2PManager) Broadcast(message Message, sendToIDs []string) {
 	// ambil list peers
-	p2p.peersMux.RLock()
+	p2p.PeersMux.RLock()
 	peers := p2p.Peers
-	p2p.peersMux.RUnlock()
+	p2p.PeersMux.RUnlock()
 
 	// kirim pesan ke peer ter-list
 	for index := range sendToIDs {

@@ -117,7 +117,7 @@ func (node *Node) handleBlockRequest(peer *p2p.Peer, message p2p.Message) {
 
 	block, err := node.Blockchain.GetBlock(height)
 	if err != nil {
-		fmt.Printf("cannot handle block request from %s, reason: %s", peer.ID, err)
+		fmt.Printf("cannot handle block request from %s, reason: %s\n", peer.ID, err)
 		return
 	}
 
@@ -148,8 +148,8 @@ func (node *Node) handleTxGossip(message p2p.Message) {
 	}
 
 	// Masukkan tx ke mempool
-	err := node.Mempool.AddTransaction(txGossip.Transaction)
-	if err != nil {
+	added := node.AddTxToPool(txGossip.Transaction)
+	if !added {
 		// Return tanpa broadcast
 		fmt.Println("got tx that are already in mempool. Skipping broadcast")
 		return
@@ -159,7 +159,7 @@ func (node *Node) handleTxGossip(message p2p.Message) {
 	node.Broadcast(message)
 
 	// Cek jumlah tx
-	if node.Mempool.Size() >= MaxBlockTxs {
+	if len(node.txPool) >= MaxBlockTxs {
 		node.Consensus.StartRound()
 	}
 }

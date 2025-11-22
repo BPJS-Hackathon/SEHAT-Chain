@@ -14,7 +14,7 @@ type P2PManager struct {
 
 	// menyimpan list peer yang terhubung
 	Peers    map[string]*Peer // map peer berdasarkan id
-	peersMux sync.RWMutex
+	PeersMux sync.RWMutex
 
 	pendingMessages map[string]chan Message
 	pendingMux      sync.Mutex
@@ -101,8 +101,8 @@ func (p2p *P2PManager) handleIncomingMessage(peer *Peer, message Message) {
 }
 
 func (p2p *P2PManager) RegisterPeer(peer *Peer, nodeID string) {
-	p2p.peersMux.Lock()
-	defer p2p.peersMux.Unlock()
+	p2p.PeersMux.Lock()
+	defer p2p.PeersMux.Unlock()
 
 	// Remove old address-based key if it exists
 	if peer.Address != "" {
@@ -120,8 +120,8 @@ func (p2p *P2PManager) RegisterPeer(peer *Peer, nodeID string) {
 }
 
 func (p2p *P2PManager) RemovePeer(ID string) {
-	p2p.peersMux.Lock()
-	defer p2p.peersMux.Unlock()
+	p2p.PeersMux.Lock()
+	defer p2p.PeersMux.Unlock()
 
 	delete(p2p.Peers, ID)
 	fmt.Printf("peer %s removed\n", ID)

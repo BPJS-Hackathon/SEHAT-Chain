@@ -191,10 +191,15 @@ func (node *Node) handleBlockTotalReq(w http.ResponseWriter, _ *http.Request) {
 		Count uint64 `json:"count"`
 	}
 
+	height := node.Blockchain.GetLatestHeight()
+
 	payload := BlockCount{
-		Count: node.Blockchain.GetLatestHeight() - 1, // Ignore genesis
+		Count: height,
 	}
-	payloadJson, _ := json.Marshal(payload)
+	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		fmt.Printf("error responding to block request %s\n", err)
+	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(payloadJson)

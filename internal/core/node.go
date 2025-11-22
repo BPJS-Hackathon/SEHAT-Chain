@@ -12,7 +12,6 @@ import (
 
 	"github.com/bpjs-hackathon/sehat-chain/internal/api"
 	"github.com/bpjs-hackathon/sehat-chain/internal/consensus"
-	"github.com/bpjs-hackathon/sehat-chain/internal/mempool"
 	"github.com/bpjs-hackathon/sehat-chain/internal/p2p"
 	smartcontract "github.com/bpjs-hackathon/sehat-chain/internal/smart_contract"
 	"github.com/bpjs-hackathon/sehat-chain/internal/state"
@@ -39,10 +38,13 @@ type Node struct {
 	// Data
 	Blockchain *Blockchain
 	WorldState *state.WorldState
-	Mempool    *mempool.MemPool
 	Executor   *smartcontract.Executor
 	P2P        *p2p.P2PManager
 	Consensus  *consensus.RoundRobin
+
+	// Pool
+	txPool []types.Transaction
+	txMap  map[string]types.Transaction
 
 	// API
 	Server *api.Server
@@ -61,7 +63,6 @@ func CreateNode(ID string, secret string, port string, APIPort string, validator
 	p2pMan := p2p.CreateP2PManager(ID, port)
 
 	blockchain := InitializeBlockChain()
-	mempool := mempool.NewPool()
 	ws := state.CreateWorldState()
 
 	executor := smartcontract.NewExecutor(ws)
@@ -74,9 +75,10 @@ func CreateNode(ID string, secret string, port string, APIPort string, validator
 		cred:        utils.NewCred(secret),
 		Blockchain:  blockchain,
 		WorldState:  ws,
-		Mempool:     mempool,
 		Executor:    executor,
 		P2P:         p2pMan,
+		txPool:      make([]types.Transaction, 0),
+		txMap:       make(map[string]types.Transaction),
 	}
 
 	node.Consensus = consensus.NewRoundRobin(ID, &node, validatorsMap)
@@ -103,7 +105,8 @@ func (node *Node) Start() {
 	go node.Server.Run()
 
 	//node.ConnectToNetwork()
-	node.EfficientConnectToNetwork()
+	// node.EfficientConnectToNetwork()
+	node.RobustConnectToNetwork()
 }
 
 func (node *Node) ConnectToNetwork() {
@@ -197,6 +200,80 @@ func (node *Node) EfficientConnectToNetwork() {
 	wg.Wait() // Wait for all handshakes
 }
 
+func (node *Node) RobustConnectToNetwork() {
+	time.Sleep(time.Second * 1)
+
+	var wg sync.WaitGroup
+	connectionAttempts := make(map[string]int)
+	var connMux sync.Mutex
+
+	for _, validator := range node.validators {
+		if validator.ID == node.ID {
+			continue
+		}
+
+		wg.Add(1)
+		go func(validatorID, address string) {
+			defer wg.Done()
+
+			// Wait a bit if we're the "higher" ID to let the other side connect first
+			if node.ID > validatorID {
+				time.Sleep(2 * time.Second)
+
+				// Check if peer already connected to us
+				node.P2P.PeersMux.RLock()
+				_, alreadyConnected := node.P2P.Peers[validatorID]
+				node.P2P.PeersMux.RUnlock()
+
+				if alreadyConnected {
+					fmt.Printf("✅ Peer %s already connected (initiated by them)\n", validatorID)
+					return
+				}
+			}
+
+			// Attempt connection
+			for i := 0; i < 10; i++ {
+				// Check again if peer connected while we were retrying
+				node.P2P.PeersMux.RLock()
+				_, alreadyConnected := node.P2P.Peers[validatorID]
+				node.P2P.PeersMux.RUnlock()
+
+				if alreadyConnected {
+					fmt.Printf("✅ Peer %s connected during retry\n", validatorID)
+					return
+				}
+
+				if err := node.startHandshake(address); err == nil {
+					connMux.Lock()
+					connectionAttempts[validatorID] = i + 1
+					connMux.Unlock()
+					fmt.Printf("✅ Successfully connected to %s (attempt %d)\n", validatorID, i+1)
+					return
+				}
+
+				fmt.Printf("⚠️ Connection attempt %d to %s failed, retrying...\n", i+1, validatorID)
+				time.Sleep(1 * time.Second)
+			}
+
+			fmt.Printf("❌ Failed to connect to %s after 3 attempts\n", validatorID)
+		}(validator.ID, validator.Address)
+	}
+
+	wg.Wait()
+
+	// Log final status
+	node.P2P.PeersMux.RLock()
+	actualPeerCount := len(node.P2P.Peers)
+	node.P2P.PeersMux.RUnlock()
+
+	fmt.Printf("Connecting finished with final peer count: %d\n",
+		actualPeerCount)
+
+	// Trigger sync
+	time.Sleep(500 * time.Millisecond)
+	node.triggerSync()
+}
+
 func (node *Node) triggerSync() {
 
 	currentHeight := node.Blockchain.GetLatestHeight()
@@ -217,7 +294,6 @@ func (node *Node) triggerSync() {
 	var maxNetworkHeight uint64 = 0
 
 	// Tanya ke semua validator yang terhubung
-	// (Di implementasi real, cukup tanya 1 peer acak atau round robin)
 	for id := range node.validators {
 		if id == node.ID {
 			continue
@@ -226,6 +302,7 @@ func (node *Node) triggerSync() {
 		// Gunakan Request dengan timeout pendek
 		resp, err := node.P2P.Request(id, reqMessage, 2*time.Second)
 		if err != nil {
+			fmt.Printf("request error : %v", err)
 			continue
 		}
 
@@ -287,11 +364,9 @@ func (node *Node) syncChain(targetHeight uint64) {
 			}
 
 			// Validasi blok yang diterima sebelum commit
-			// (Sederhana: Cek Height dan Hash Parent)
 			newBlock := blockPayload.Block
 			if newBlock.Header.Height == nextHeight {
 				// CommitBlock sudah handle validasi lanjutan & insert DB
-				// PENTING: CommitBlock menggunakan mutex internal blockchain, jadi aman dipanggil di sini
 				node.CommitBlock(newBlock)
 				blockReceived = true
 
@@ -376,12 +451,13 @@ func (node *Node) GetLatestBlock() types.Block {
 }
 
 func (node *Node) CommitBlock(block types.Block) {
-
+	node.mux.Lock()
 	node.Blockchain.AddBlock(block)
 
 	node.Executor.ApplyBlock(block)
 
-	node.Mempool.RemoveTxs(block.Transactions)
+	node.RemoveTxsFromPool(len(block.Transactions))
+	node.mux.Unlock()
 
 	blockPayload := p2p.BlockPayload{
 		LatestHeight: node.Blockchain.GetLatestHeight(),
@@ -407,7 +483,9 @@ func (node *Node) SignData(data []byte) string {
 }
 
 func (node *Node) CreateBlock() types.Block {
-	txs := node.Mempool.PickTxs(MaxBlockTxs)
+	txCount := min(len(node.txPool), MaxBlockTxs)
+	txs := node.txPool[:txCount]
+
 	prevBlock := node.Blockchain.GetLatestBlock()
 
 	txRoot := calculateTxRoot(txs)
@@ -443,7 +521,7 @@ func calculateTxRoot(txs []types.Transaction) string {
 
 // Helper submit tx ke network
 func (node *Node) submitTransactionToNetwork(tx types.Transaction) {
-	node.Mempool.AddTransaction(tx)
+	node.AddTxToPool(tx)
 
 	payload := p2p.TxGossipPayload{
 		Transaction: tx,
@@ -459,4 +537,30 @@ func (node *Node) submitTransactionToNetwork(tx types.Transaction) {
 
 	// 3. Broadcast to peers
 	node.Broadcast(msg)
+}
+
+// Add tx to pool
+func (node *Node) AddTxToPool(tx types.Transaction) bool {
+	_, exists := node.txMap[tx.ID]
+	if exists {
+		fmt.Print("skipping tx because it already exist on the pool\n")
+		return false
+	}
+	node.txPool = append(node.txPool, tx)
+	node.txMap[tx.ID] = tx
+	fmt.Print("added 1 tx to the pool\n")
+	return true
+}
+
+// Remove tx from pool
+func (node *Node) RemoveTxsFromPool(count int) bool {
+	if len(node.txPool) < count {
+		return false
+	}
+
+	for i := 0; i < count; i++ {
+		delete(node.txMap, node.txPool[i].ID)
+	}
+	node.txPool = node.txPool[count:]
+	return true
 }
