@@ -1,0 +1,18 @@
+{
+    "port":  "9012",
+    "api_port": "6662",
+    "node_id":  "85516c8a-688b-4123-b880-e1c829692c88",
+    "validators":  [
+                       {
+                           "ID":  "BPJS-SERVER",
+                           "Secret":  "secret-bpjs-server",
+                           "Address":  "localhost:9001"
+                       },
+                       {
+                           "ID":  "BADAN-AUDIT",
+                           "Secret":  "secret-auditor",
+                           "Address":  "localhost:9002"
+                       }
+                   ],
+    "secret":  "secret-light-node-2"
+}
