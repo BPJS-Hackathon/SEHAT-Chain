@@ -82,7 +82,8 @@ func (r *RoundRobin) HandleIncomingBlock(block types.Block) {
 	// Tidak menerima block dengan height yang lebih rendah
 	latest := r.Node.GetLatestBlock()
 	if block.Header.Height != latest.Header.Height+1 {
-		fmt.Printf("invalid block height. Expecting %d, got %d\n", latest.Header.Height+1, block.Header.Height)
+		fmt.Printf("invalid block height (handle incoming). Expecting %d, got %d\n", latest.Header.Height+1, block.Header.Height)
+		fmt.Printf("\tProposer: %s\n", block.Header.ProposerID)
 		return
 	}
 
@@ -103,7 +104,7 @@ func (r *RoundRobin) HandleIncomingBlock(block types.Block) {
 
 	// Validate world state
 
-	fmt.Printf("Incoming block validated, commiting block")
+	fmt.Println("Incoming block validated, commiting block")
 	r.Node.CommitBlock(block)
 }
 

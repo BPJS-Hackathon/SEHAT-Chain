@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	MaxBlockTxs = 5
+	MaxBlockTxs = 1
 )
 
 type Node struct {
@@ -72,12 +72,11 @@ func CreateNode(ID string, secret string, port string, APIPort string, validator
 		validators:  validatorsMap,
 		peers:       make(map[string]string),
 		cred:        utils.NewCred(secret),
-		// SmartContractExecutor
-		Blockchain: blockchain,
-		WorldState: ws,
-		Mempool:    mempool,
-		Executor:   executor,
-		P2P:        p2pMan,
+		Blockchain:  blockchain,
+		WorldState:  ws,
+		Mempool:     mempool,
+		Executor:    executor,
+		P2P:         p2pMan,
 	}
 
 	node.Consensus = consensus.NewRoundRobin(ID, &node, validatorsMap)
@@ -101,7 +100,7 @@ func (node *Node) Start() {
 		panic(err)
 	}
 
-	node.Server.Run()
+	go node.Server.Run()
 
 	//node.ConnectToNetwork()
 	node.EfficientConnectToNetwork()
@@ -169,7 +168,7 @@ func (node *Node) ConnectToNetwork() {
 }
 
 func (node *Node) EfficientConnectToNetwork() {
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 1)
 
 	var wg sync.WaitGroup
 

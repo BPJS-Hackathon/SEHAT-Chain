@@ -75,6 +75,7 @@ func (mp *MemPool) RemoveTxs(txs []types.Transaction) {
 	}
 
 	mp.order = mp.rebuildSlice(mp.order)
+	fmt.Printf("removing txs. left in mempool: %d", mp.Size())
 }
 
 // Filter key dari tx yang sudah dihapus

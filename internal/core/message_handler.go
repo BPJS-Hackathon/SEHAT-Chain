@@ -24,7 +24,6 @@ func (node *Node) handleIncomingMessage(peer *p2p.Peer, msg p2p.Message) {
 	default:
 		fmt.Printf("invalid message type")
 	}
-
 }
 
 func (node *Node) handleHandshakeRequest(peer *p2p.Peer, message p2p.Message) {
@@ -152,7 +151,7 @@ func (node *Node) handleTxGossip(message p2p.Message) {
 	err := node.Mempool.AddTransaction(txGossip.Transaction)
 	if err != nil {
 		// Return tanpa broadcast
-		fmt.Print("got tx that are already in mempool. Skipping broadcast")
+		fmt.Println("got tx that are already in mempool. Skipping broadcast")
 		return
 	}
 

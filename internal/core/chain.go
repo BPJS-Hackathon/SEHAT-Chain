@@ -59,7 +59,7 @@ func (bc *Blockchain) AddBlock(block types.Block) error {
 	lastBlock := bc.Blocks[len(bc.Blocks)-1]
 
 	if block.Header.Height != lastBlock.Header.Height+1 {
-		return fmt.Errorf("invalid block height. Expecting %d, got %d", lastBlock.Header.Height+1, block.Header.Height)
+		return fmt.Errorf("invalid block height (after commit). Expecting %d, got %d", lastBlock.Header.Height+1, block.Header.Height)
 	}
 
 	if block.Header.PrevHash != lastBlock.HeaderHash() {

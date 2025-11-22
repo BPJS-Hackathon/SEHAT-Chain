@@ -13,6 +13,28 @@ import (
 	"github.com/google/uuid"
 )
 
+// BODONG
+func (node *Node) TestTx() {
+	fmt.Printf("fake tx creation test\n")
+	hash := sha256.Sum256([]byte("SomeRandomString"))
+	visitPayload := types.TxVisit{
+		RekamMedisID:   uuid.NewString(),
+		RekamMedisHash: hex.EncodeToString(hash[:]),
+	}
+	visitJson, _ := json.Marshal(visitPayload)
+
+	tx := types.Transaction{
+		ID:        uuid.NewString(),
+		Type:      types.TxTypeRecordVisit,
+		Timestamp: time.Now().Unix(),
+		SenderID:  node.ID,
+		Payload:   visitJson,
+	}
+	tx.Signature = node.SignData([]byte(tx.Hash()))
+	node.submitTransactionToNetwork(tx)
+	fmt.Printf("created a fake tx of id %s\n", visitPayload.RekamMedisID)
+}
+
 func (node *Node) handleFK1RekamMedisPost(w http.ResponseWriter, r *http.Request) {
 	var reqData FK1RMSubmitRequest
 

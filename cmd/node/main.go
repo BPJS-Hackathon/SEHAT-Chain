@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/bpjs-hackathon/sehat-chain/internal/core"
 	"github.com/bpjs-hackathon/sehat-chain/types"
@@ -87,15 +88,25 @@ func main() {
 	fmt.Println("Genesis block initialized")
 
 	// Start the node (opens P2P and connects to network)
+	if !isValidator {
+		time.Sleep(time.Second * 3)
+	}
 	node.Start()
 
 	fmt.Printf("Node %s is running on port %s\n", config.NodeID, config.Port)
-	fmt.Println("Connected to validator network")
+	fmt.Printf("Connecting finished with final peer count: %d\n", len(node.P2P.Peers))
 
 	if isValidator {
 		fmt.Println("Validator mode: Ready to propose blocks")
 	} else {
 		fmt.Println("Light node mode: Listening for blocks")
+	}
+
+	// Tx Bodong
+	if !isValidator {
+		time.Sleep(time.Second * 10)
+		fmt.Printf("timer to create fake tx")
+		node.TestTx()
 	}
 
 	fmt.Println()
