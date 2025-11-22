@@ -39,7 +39,8 @@ func (node *Node) handleFK1RekamMedisPost(w http.ResponseWriter, r *http.Request
 	var reqData FK1RMSubmitRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
-		http.Error(w, "invalid request", http.StatusBadRequest)
+		fmt.Printf("error decoding fk1 rekam medis: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -94,7 +95,7 @@ func (node *Node) handleFK1RekamMedisPost(w http.ResponseWriter, r *http.Request
 	node.submitTransactionToNetwork(tx)
 
 	response := FK1RMSubmitResponse{
-		RujukanID: "TODO",
+		RujukanID: rujukanID,
 	}
 	responseJson, _ := json.Marshal(response)
 	w.WriteHeader(http.StatusOK)
@@ -265,4 +266,9 @@ func (node *Node) handleAPIRequestRujukan(w http.ResponseWriter, r *http.Request
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(payloadJson)
+}
+
+func (node *Node) handleAPIPing(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte("STATUS OK!"))
 }

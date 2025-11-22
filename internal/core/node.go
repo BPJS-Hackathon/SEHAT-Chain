@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -88,17 +89,28 @@ func CreateNode(ID string, secret string, port string, APIPort string, validator
 	node.P2P.Subscribe(node.handleIncomingMessage)
 
 	handler := api.CreateAPIHandler()
-	handler.AddEndpoint("POST /api/rekam_medis/fk1", node.handleFK1RekamMedisPost)
-	handler.AddEndpoint("POST /api/rekam_medis/fk2", node.handleFK2RekamMedisPost)
-	handler.AddEndpoint("GET /api/rujukan/{id}", node.handleAPIRequestRujukan)
-	handler.AddEndpoint("POST /api/claim", node.handleClaimExecute)
-	handler.AddEndpoint("GET /api/total_block", node.handleBlockTotalReq)
-	handler.AddEndpoint("GET /api/block/{height}", node.handleAPIBlockRequest)
+
+	handler.AddEndpoint("POST /api/rekam_medis/fk1", cors(node.handleFK1RekamMedisPost))
+	handler.AddEndpoint("POST /api/rekam_medis/fk2", cors(node.handleFK2RekamMedisPost))
+	handler.AddEndpoint("GET /api/rujukan/{id}", cors(node.handleAPIRequestRujukan))
+	handler.AddEndpoint("POST /api/claim", cors(node.handleClaimExecute))
+	handler.AddEndpoint("GET /api/total_block", cors(node.handleBlockTotalReq))
+	handler.AddEndpoint("GET /api/block/{height}", cors(node.handleAPIBlockRequest))
+	handler.AddEndpoint("GET /api/ping", cors(node.handleAPIPing))
 
 	server := api.CreateServer(handler, APIPort)
 	node.Server = server
 
 	return &node
+}
+
+func cors(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		next(w, r)
+	}
 }
 
 func (node *Node) Start() {

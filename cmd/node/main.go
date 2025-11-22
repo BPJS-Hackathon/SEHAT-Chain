@@ -143,17 +143,17 @@ func createDefaultConfig(path string) error {
 			{
 				ID:      "validator-1",
 				Secret:  "secret-validator-1",
-				Address: "localhost:9001",
+				Address: ":9001",
 			},
 			{
 				ID:      "validator-2",
 				Secret:  "secret-validator-2",
-				Address: "localhost:9002",
+				Address: ":9002",
 			},
 			{
 				ID:      "validator-3",
 				Secret:  "secret-validator-3",
-				Address: "localhost:9003",
+				Address: ":9003",
 			},
 		},
 	}
