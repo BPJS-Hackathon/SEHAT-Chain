@@ -15,6 +15,7 @@ type Config struct {
 	NodeID     string                  `json:"node_id"`
 	Secret     string                  `json:"secret"`
 	Port       string                  `json:"port"`
+	APIPort    string                  `json:"api_port"`
 	Validators []types.ValidatorConfig `json:"validators"`
 }
 
@@ -51,7 +52,7 @@ func main() {
 	}
 
 	// Validate configuration
-	if config.NodeID == "" || config.Secret == "" || config.Port == "" {
+	if config.NodeID == "" || config.Secret == "" || config.Port == "" || config.APIPort == "" {
 		fmt.Println("❌ Error: node_id, secret, and port must be specified")
 		os.Exit(1)
 	}
@@ -80,7 +81,7 @@ func main() {
 	fmt.Println("========================================")
 
 	// Create and start node
-	node := core.CreateNode(config.NodeID, config.Secret, config.Port, config.Validators)
+	node := core.CreateNode(config.NodeID, config.Secret, config.Port, config.APIPort, config.Validators)
 
 	fmt.Printf("Node %s created\n", config.NodeID)
 	fmt.Println("Genesis block initialized")

@@ -50,7 +50,7 @@ type Node struct {
 	mux sync.RWMutex
 }
 
-func CreateNode(ID string, secret string, port string, validators []types.ValidatorConfig) *Node {
+func CreateNode(ID string, secret string, port string, APIPort string, validators []types.ValidatorConfig) *Node {
 	// 1. Convert Slice to Map untuk lookup cepat
 	validatorsMap := make(map[string]types.ValidatorConfig)
 	for _, v := range validators {
@@ -90,7 +90,7 @@ func CreateNode(ID string, secret string, port string, validators []types.Valida
 	handler.AddEndpoint("GET /api/total_block", node.handleBlockTotalReq)
 	handler.AddEndpoint("GET /api/block/{height}", node.handleAPIBlockRequest)
 
-	server := api.CreateServer(handler, port)
+	server := api.CreateServer(handler, APIPort)
 	node.Server = server
 
 	return &node
