@@ -85,8 +85,8 @@ func (p2p *P2PManager) acceptLoop() {
 func (p2p *P2PManager) handleIncomingMessage(peer *Peer, message Message) {
 	if message.ResponseID == message.RequestID {
 		p2p.pendingMux.Lock()
+		defer p2p.pendingMux.Unlock()
 		channel, exists := p2p.pendingMessages[message.RequestID]
-		p2p.pendingMux.Unlock()
 
 		if exists {
 			channel <- message
@@ -103,6 +103,11 @@ func (p2p *P2PManager) handleIncomingMessage(peer *Peer, message Message) {
 func (p2p *P2PManager) RegisterPeer(peer *Peer, nodeID string) {
 	p2p.peersMux.Lock()
 	defer p2p.peersMux.Unlock()
+
+	// Remove old address-based key if it exists
+	if peer.Address != "" {
+		delete(p2p.Peers, peer.Address)
+	}
 
 	peer.ID = nodeID
 	if oldPeer, exists := p2p.Peers[nodeID]; exists {

@@ -27,6 +27,11 @@ func (p2p *P2PManager) Connect(address string) (*Peer, error) {
 		p2p.handleIncomingMessage(peer, message)
 	})
 
+	// Register temporarily with address as key
+	p2p.peersMux.Lock()
+	p2p.Peers[address] = peer // ← Temporary registration
+	p2p.peersMux.Unlock()
+
 	return peer, nil
 }
 
