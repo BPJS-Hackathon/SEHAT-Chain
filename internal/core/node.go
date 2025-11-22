@@ -46,7 +46,7 @@ type Node struct {
 	mux sync.RWMutex
 }
 
-func CreateNode(ID string, port string, validators []types.ValidatorConfig) *Node {
+func CreateNode(ID string, secret string, port string, validators []types.ValidatorConfig) *Node {
 	// 1. Convert Slice to Map untuk lookup cepat
 	validatorsMap := make(map[string]types.ValidatorConfig)
 	for _, v := range validators {
@@ -60,15 +60,19 @@ func CreateNode(ID string, port string, validators []types.ValidatorConfig) *Nod
 	mempool := mempool.NewPool()
 	ws := state.CreateWorldState()
 
+	executor := smartcontract.NewExecutor(ws)
+
 	node := Node{
 		ID:          ID,
 		isValidator: isValidator,
 		validators:  validatorsMap,
 		peers:       make(map[string]string),
+		cred:        utils.NewCred(secret),
 		// SmartContractExecutor
 		Blockchain: blockchain,
 		WorldState: ws,
 		Mempool:    mempool,
+		Executor:   executor,
 		P2P:        p2pMan,
 	}
 

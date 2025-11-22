@@ -29,9 +29,10 @@ type P2PManager struct {
 // Membuat instance p2p manager
 func CreateP2PManager(nodeID string, port string) *P2PManager {
 	return &P2PManager{
-		ID:    nodeID,
-		Port:  port,
-		Peers: make(map[string]*Peer),
+		ID:              nodeID,
+		Port:            port,
+		Peers:           make(map[string]*Peer),
+		pendingMessages: make(map[string]chan Message),
 	}
 }
 
