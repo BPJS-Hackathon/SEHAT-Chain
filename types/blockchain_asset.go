@@ -26,7 +26,7 @@ type ClaimAsset struct {
 	RekamMedisHash string `json:"rekam_medis_hash"`
 
 	DiagnosisCode string `json:"diagnosis_code"`
-	Amount        int64  `json:"amount"`
+	Amount        uint64 `json:"amount"`
 	Status        string `json:"status"`
 	Timestamp     int64  `json:"timestamp"` // Kapan disubmit
 }

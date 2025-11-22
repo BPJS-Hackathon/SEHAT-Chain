@@ -10,9 +10,10 @@ import (
 
 // TransactionType
 const (
-	TxTypeRecordVisit  = "RECORD_VISIT"  // Mencatat kunjungan
-	TxTypeSubmitClaim  = "SUBMIT_CLAIM"  // Submit klaim oleh pengunjung
-	TxTypeExecuteClaim = "EXECUTE_CLAIM" // Persetujuan final bahwa BPJS telah memvalidasi dan akan membayar
+	TxTypeCreateRujukan = "RUJUKAN_MINT"
+	TxTypeRecordVisit   = "RECORD_VISIT"  // Mencatat kunjungan
+	TxTypeSubmitClaim   = "SUBMIT_CLAIM"  // Submit klaim oleh pengunjung
+	TxTypeExecuteClaim  = "EXECUTE_CLAIM" // Persetujuan final bahwa BPJS telah memvalidasi dan akan membayar
 )
 
 // Wrapping transaction yang disebar antar node

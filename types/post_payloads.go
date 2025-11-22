@@ -27,6 +27,7 @@ type TxSubmitClaim struct {
 	RekamMedisID   string `json:"rekam_medis_id"`
 	RekamMedisHash string `json:"rekam_medis_hash"`
 	DiagnosisCode  string `json:"diagnosis_final"`
+	Amount         uint64 `json:"amount"`
 }
 
 // Payload persetujuan pembayaran
@@ -45,4 +46,5 @@ const (
 	ClaimStatusPending   = "PENDING"   // Claim sudah diverifikasi blockchain
 	ClaimStatusPaid      = "PAID"      // TxExecuteClaim sudah dijalankan admin
 	ClaimStatusRejected  = "REJECTED"  // Claim direject oleh blockchain atau saat TxExecuteClaim
+	ClaimStatusFaked     = "FAKED"
 )
