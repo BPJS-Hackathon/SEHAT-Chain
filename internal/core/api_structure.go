@@ -24,7 +24,7 @@ type Rujukan struct {
 
 type FK1RMSubmitRequest struct {
 	RekamMedis
-	Rujukan
+	// Rujukan // Hardcoded
 }
 
 // Return ID rujukan yang dibuat (untuk dibawa ke pasien)

@@ -75,8 +75,8 @@ func (node *Node) handleFK1RekamMedisPost(w http.ResponseWriter, r *http.Request
 	txPayload := types.TxRujukan{
 		RujukanID:       rujukanID,
 		PesertaID:       reqData.PesertaNIK,
-		FaskesPembuatID: reqData.FaskesPembuatID,
-		FaskesTujuanID:  reqData.FaskesTujuanID,
+		FaskesPembuatID: "58c22b9f-6e2a-49ff-9dd4-d9e7c0927974",
+		FaskesTujuanID:  "85516c8a-688b-4123-b880-e1c829692c88",
 		RekamMedisID:    reqData.RekamMedisID,
 		RekamMedisHash:  rmHash,
 		DiagnosisCode:   reqData.RekamMedisID,
