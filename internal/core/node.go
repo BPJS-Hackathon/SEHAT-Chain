@@ -90,6 +90,7 @@ func CreateNode(ID string, secret string, port string, APIPort string, validator
 	handler := api.CreateAPIHandler()
 	handler.AddEndpoint("POST /api/rekam_medis/fk1", node.handleFK1RekamMedisPost)
 	handler.AddEndpoint("POST /api/rekam_medis/fk2", node.handleFK2RekamMedisPost)
+	handler.AddEndpoint("GET /api/rujukan/{id}", node.handleAPIRequestRujukan)
 	handler.AddEndpoint("POST /api/claim", node.handleClaimExecute)
 	handler.AddEndpoint("GET /api/total_block", node.handleBlockTotalReq)
 	handler.AddEndpoint("GET /api/block/{height}", node.handleAPIBlockRequest)

@@ -237,3 +237,32 @@ func (node *Node) handleAPIBlockRequest(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusOK)
 	w.Write(payloadJson)
 }
+
+func (node *Node) handleAPIRequestRujukan(w http.ResponseWriter, r *http.Request) {
+	reqID := r.PathValue("id")
+	if reqID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	var rujukan types.RujukanAsset
+	for _, rujuk := range node.WorldState.Rujukans {
+		if rujuk.ID == reqID {
+			rujukan = rujuk
+			break
+		}
+	}
+
+	if rujukan.ID == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	payload := GetRujukanInfo{
+		RujukanAsset: rujukan,
+	}
+	payloadJson, _ := json.Marshal(payload)
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(payloadJson)
+}

@@ -3,7 +3,7 @@ package core
 import "github.com/bpjs-hackathon/sehat-chain/types"
 
 type RekamMedis struct {
-	RekamMedisID  string `json:"rekam_medis_id"`
+	RekamMedisID  string `json:"id"`
 	PesertaNIK    string `json:"peserta_nik"`
 	UserID        string `json:"user_id"`
 	DiagnosisCode string `json:"diagnosis_code"`
