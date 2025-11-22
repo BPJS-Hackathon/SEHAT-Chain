@@ -29,9 +29,6 @@ const (
 
 	// CONSENSUS
 	MsgTypeTxGossip = "CONSENSUS_TX_GOSSIP" // Node menyebar tx dari frontend/node lain agar semua node menerima tx
-	MsgTypeProposal = "CONSENSUS_PROPOSE"   // Leader mengirim block proposal
-	MsgTypePrepare  = "CONSENSUS_PREPARE"   // Node mengirim pesan prepare (proposal diterima)
-	MsgTypeCommit   = "CONSENSUS_COMMIT"    // Node mengirim pesan commit (siap untuk eksekusi block)
 )
 
 // Payloads
@@ -58,11 +55,8 @@ type PeerPayload struct {
 	Peers map[string]string `json:"peers"` // map id dan address
 }
 
-type BlockProposal struct {
-	Block types.Block `json:"block"`
-}
-
 type VotePayload struct {
+	NodeID      string `json:"node_id"`
 	BlockHeight uint64 `json:"block_height"`
 	BlockHash   string `json:"block_hash"`
 	VoteType    string `json:"vote_type"` // "PREPARE" or "COMMIT"
