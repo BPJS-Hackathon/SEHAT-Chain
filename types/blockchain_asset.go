@@ -5,7 +5,7 @@ type RujukanAsset struct {
 	ID        string `json:"id"`
 	PesertaID string `json:"peserta_id"`
 
-	FaskesPembuadID string `json:"faskes_pembuat_id"`
+	FaskesPembuatID string `json:"faskes_pembuat_id"`
 	FaskesTujuanID  string `json:"faskes_tujuan_id"`
 
 	RekamMedisID   string `json:"rekam_medis_id"`

@@ -10,8 +10,7 @@ import (
 
 // TransactionType
 const (
-	TxTypeMintReferral = "MINT_REFERRAL" // Menciptakan token rujukan
-	TxTypeRecordVisit  = "RECORD_VISIT"  // Mencatat kunjungan TANPA rujukan
+	TxTypeRecordVisit  = "RECORD_VISIT"  // Mencatat kunjungan
 	TxTypeSubmitClaim  = "SUBMIT_CLAIM"  // Submit klaim oleh pengunjung
 	TxTypeExecuteClaim = "EXECUTE_CLAIM" // Persetujuan final bahwa BPJS telah memvalidasi dan akan membayar
 )

@@ -11,9 +11,10 @@ import (
 )
 
 type WorldState struct {
-	Rujukans map[string]types.RujukanAsset
-	Claims   map[string]types.ClaimAsset
-	mux      sync.RWMutex
+	VisitRecord map[string]types.TxVisit
+	Rujukans    map[string]types.RujukanAsset
+	Claims      map[string]types.ClaimAsset
+	mux         sync.RWMutex
 }
 
 func CreateWorldState() *WorldState {
@@ -21,6 +22,13 @@ func CreateWorldState() *WorldState {
 		Rujukans: make(map[string]types.RujukanAsset),
 		Claims:   make(map[string]types.ClaimAsset),
 	}
+}
+
+func (ws *WorldState) AddVisit(visit types.TxVisit) {
+	ws.mux.Lock()
+	defer ws.mux.Unlock()
+
+	ws.VisitRecord[visit.RekamMedisID] = visit
 }
 
 func (ws *WorldState) AddClaim(claim types.ClaimAsset) {
@@ -35,6 +43,14 @@ func (ws *WorldState) AddRujukan(rujukan types.RujukanAsset) {
 	defer ws.mux.Unlock()
 
 	ws.Rujukans[rujukan.ID] = rujukan
+}
+
+func (ws *WorldState) GetVisit(rekamMedisID string) (types.TxVisit, bool) {
+	ws.mux.RLock()
+	defer ws.mux.RUnlock()
+
+	visit, exists := ws.VisitRecord[rekamMedisID]
+	return visit, exists
 }
 
 func (ws *WorldState) GetClaim(claimID string) (types.ClaimAsset, bool) {

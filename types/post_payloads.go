@@ -1,9 +1,16 @@
 // Menyimpan payload yang dikirim oleh frontend
 package types
 
+// Payload ketika faskes 1 upload rekam medis tanpa membuat rujuk
+type TxVisit struct {
+	RekamMedisID   string `json:"rekam_medis_id"`
+	RekamMedisHash string `json:"rekam_medis_hash"`
+}
+
 // Payload pembuatan referral (rujukan)
 // digunakan oleh faskes 1 saat upload rekam medis dengan outcome rujukan
 type TxRujukan struct {
+	RujukanID       string `json:"rujukan_id"`
 	PesertaID       string `json:"patient_id"`
 	RekamMedisID    string `json:"rekam_medis_id"`
 	RekamMedisHash  string `json:"rekam_medis_hash"`

@@ -15,15 +15,15 @@ type RoundRobin struct {
 	Node NodeInterface
 	mux  sync.RWMutex
 
-	validators     map[string]string // string id beserta key
-	validatorsSort []string          // sorted validator
+	validators     map[string]types.ValidatorConfig // string id
+	validatorsSort []string                         // sorted validator
 }
 
-func NewPBFT(id string, node NodeInterface, validators map[string]string) *RoundRobin {
+func NewRoundRobin(id string, node NodeInterface, validators map[string]types.ValidatorConfig) *RoundRobin {
 	// sort validator
 	validatorsSort := make([]string, 0, len(validators))
 	for _, validator := range validators {
-		validatorsSort = append(validatorsSort, validator)
+		validatorsSort = append(validatorsSort, validator.ID)
 	}
 	sort.Strings(validatorsSort)
 
@@ -79,21 +79,29 @@ func (r *RoundRobin) HandleIncomingBlock(block types.Block) {
 	r.mux.Lock()
 	defer r.mux.Unlock()
 
+	// Tidak menerima block dengan height yang lebih rendah
 	latest := r.Node.GetLatestBlock()
 	if block.Header.Height != latest.Header.Height+1 {
 		fmt.Printf("invalid block height. Expecting %d, got %d\n", latest.Header.Height+1, block.Header.Height)
 		return
 	}
-	if block.Header.PrevHash != latest.HeaderHash() {
-		fmt.Printf("invalid previous block hash. Expecting %s, got %s\n", latest.HeaderHash(), block.Header.PrevHash)
-		return
-	}
 
+	// Pastikan block datang dari leader yang benar
 	expectedLeader := r.getLeaderForHeight(block.Header.Height)
 	if block.Header.ProposerID != expectedLeader {
 		fmt.Printf("invalid proposer. Expecting %s, got %s\n", expectedLeader, block.Header.ProposerID)
 		return
 	}
+
+	// Validate header hash
+	if block.Header.PrevHash != latest.HeaderHash() {
+		fmt.Printf("invalid previous block hash. Expecting %s, got %s\n", latest.HeaderHash(), block.Header.PrevHash)
+		return
+	}
+
+	// Validate tx root
+
+	// Validate world state
 
 	fmt.Printf("Incoming block validated, commiting block")
 	r.Node.CommitBlock(block)
